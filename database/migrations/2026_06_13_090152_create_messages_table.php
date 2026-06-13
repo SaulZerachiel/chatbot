@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
+            // Clé étrangère vers conversations — si conv supprimée, messages aussi
+            $table->foreignId('conversation_id')->constrained()->onDelete('cascade');
+            // Rôle : 'user' (l'étudiant) ou 'assistant' (Gandalf Mélenchon)
+            $table->enum('role', ['user', 'assistant', 'system']);
+            // Le texte du message (peut être très long → text)
+            $table->text('content');
             $table->timestamps();
         });
     }

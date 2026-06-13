@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
+            // Clé étrangère vers users — si user supprimé, ses convs aussi
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            // Titre généré automatiquement (null au début)
+            $table->string('title')->nullable();
+            // Le modèle IA utilisé pour cette conversation
+            $table->string('model')->nullable();
             $table->timestamps();
         });
     }
