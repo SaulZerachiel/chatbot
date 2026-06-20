@@ -33,4 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::delete('/chat/{conversation}', [ChatController::class, 'destroy'])->name('chat.destroy');
+Route::patch('/chat/{conversation}', [ChatController::class, 'rename'])->name('chat.rename');
+
 require __DIR__ . '/auth.php';

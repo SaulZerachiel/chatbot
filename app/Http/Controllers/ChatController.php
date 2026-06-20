@@ -19,7 +19,7 @@ class ChatController extends Controller
 	{
 		$conversations = auth()->user()
 			->conversations()
-			->orderByDesc('updated_at') // Tri : plus récente d'abord
+			->orderByDesc('updated_at')
 			->get(['id', 'title', 'model', 'updated_at']);
 
 		return Inertia::render('Chat/Index', [
@@ -32,10 +32,24 @@ class ChatController extends Controller
 		]);
 	}
 
+	public function destroy(Conversation $conversation)
+	{
+		if ($conversation->user_id !== auth()->id()) abort(403);
+		$conversation->delete();
+		return redirect()->route('chat.index');
+	}
+
+	public function rename(Request $request, Conversation $conversation)
+	{
+		if ($conversation->user_id !== auth()->id()) abort(403);
+		$validated = $request->validate(['title' => 'required|string|max:255']);
+		$conversation->update(['title' => $validated['title']]);
+		return redirect()->back();
+	}
+
 	/** Affiche une conversation spécifique avec ses messages. */
 	public function show(Conversation $conversation)
 	{
-		// Sécurité : seul le propriétaire peut voir sa conversation
 		if ($conversation->user_id !== auth()->id()) {
 			abort(403);
 		}
@@ -48,7 +62,6 @@ class ChatController extends Controller
 		return Inertia::render('Chat/Index', [
 			'conversations' => $conversations,
 			'currentConversation' => $conversation,
-			// Eager loading : charge les messages en 1 requête (évite N+1)
 			'messages' => $conversation->messages,
 			'models' => $this->streamService->getModelsLight(),
 			'selectedModel' => $conversation->model
@@ -105,15 +118,11 @@ class ChatController extends Controller
 			function () use ($history, $validated, $conversation, $convId): void {
 				$collected = '';
 
-				// 1. Envoyer l'ID de conversation en PREMIER (pour le frontend)
-				echo "[CONV_ID:{$convId}]";
-				flush();
-
-				// 2. Streamer la réponse token par token
+				// 1. Envoyer l'ID de conversation en format SSE
+				echo "data: [CONV_ID:{$convId}]\n\n";				flush();
+				// 2. Streamer la réponse token par token en format SSE
 				foreach ($this->streamService->streamChunks($history, $validated['model']) as $chunk) {
-					echo $chunk;
-					$collected .= $chunk;
-
+					echo "data: {$chunk}\n\n";					$collected .= $chunk;
 					if (ob_get_level() > 0) {
 						ob_flush();
 					}
@@ -121,9 +130,9 @@ class ChatController extends Controller
 					flush();
 				}
 
-				// 3. Après le stream, sauvegarder la réponse complète en BDD
+				// 3. Sauvegarder la réponse complète en BDD
 				$cleanContent = preg_replace('/\[REASONING\][\s\S]*?\[\/REASONING\]/', '', $collected);
-				$cleanContent = trim(str_replace("[CONV_ID:{$convId}]", '', $cleanContent));
+				$cleanContent = trim($cleanContent);
 
 				if ($cleanContent) {
 					$conversation->messages()->create([
@@ -143,7 +152,7 @@ class ChatController extends Controller
 					}
 				}
 
-				$conversation->touch(); // Met à jour updated_at pour le tri
+				$conversation->touch();
 			},
 			headers: [
 				'Content-Type'      => 'text/event-stream; charset=utf-8',
