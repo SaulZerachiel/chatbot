@@ -146,9 +146,9 @@ class ChatController extends Controller
 				$conversation->touch(); // Met à jour updated_at pour le tri
 			},
 			headers: [
-				'Content-Type' => 'text/plain; charset=utf-8',
-				'Cache-Control' => 'no-cache, no-store',
-				'X-Accel-Buffering' => 'no', // Désactiver le buffering Nginx
+				'Content-Type'      => 'text/event-stream; charset=utf-8',
+				'Cache-Control'     => 'no-cache, no-store',
+				'X-Accel-Buffering' => 'no',
 			]
 		);
 	}

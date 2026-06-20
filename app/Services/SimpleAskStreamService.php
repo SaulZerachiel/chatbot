@@ -14,7 +14,7 @@ use Psr\Http\Message\StreamInterface;
  */
 class SimpleAskStreamService
 {
-	public const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+	public const DEFAULT_MODEL = 'google/gemini-flash-1.5';
 
 	private string $apiKey;
 

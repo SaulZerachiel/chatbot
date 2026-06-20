@@ -50,9 +50,18 @@ const { send } = useStream(route('chat.stream'), {
 	},
 	onFinish() {
 		isStreaming.value = false
-
 		if (currentConvId.value) {
-			router.visit(route('chat.show', currentConvId.value))
+			router.reload({
+				preserveScroll: true,
+				onSuccess: () => {
+					nextTick(() => {
+						messagesEl.value?.scrollTo({ 
+							top: messagesEl.value.scrollHeight, 
+							behavior: 'smooth' 
+						})
+					})
+				}
+			})
 		}
 	},
 	onError() {
